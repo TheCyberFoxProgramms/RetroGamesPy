@@ -1,6 +1,7 @@
 import pygame
 from GameOver import game_over_main
 from GameWin import game_win_main
+from random import choice
 
 def space_invaiders_main():
     pygame.init()
@@ -9,6 +10,8 @@ def space_invaiders_main():
     screen = pygame.display.set_mode(size)
     FPS = 60
     clock = pygame.time.Clock()
+    MYEVENTTYPE = pygame.USEREVENT + 1
+    pygame.time.set_timer(MYEVENTTYPE, 300)
     check_position = False
     all_enamy = 23
     count = 0
@@ -24,6 +27,7 @@ def space_invaiders_main():
     wall_sprite_group = pygame.sprite.Group()
     floor_sprite_group = pygame.sprite.Group()
     bullet_sprite_group = pygame.sprite.Group()
+    bullet_enamy_sprite_group = pygame.sprite.Group()
 
     def run_menu_musik():
         pygame.mixer.music.load('data/sounds/space_invaiders/space_invaiders.mp3')
@@ -38,10 +42,6 @@ def space_invaiders_main():
     size_font = 24
     game_font = pygame.font.Font(r'data/Minecraft Seven_2.ttf', size_font)
 
-
-    def read_db():
-        with open('data/database/RaitingDb.txt', encoding='utf-8') as file:
-            return tuple(file.read().rstrip().split(','))
 
     class Gg(pygame.sprite.Sprite):
         def __init__(self):
@@ -101,6 +101,31 @@ def space_invaiders_main():
         def update(self, *args, **kwargs):
             self.rect.y -= 10
 
+    class BulletEnamy(pygame.sprite.Sprite):
+        def __init__(self, gg_pos_x, gg_pos_y):
+            pygame.sprite.Sprite.__init__(self)
+            self.surf = pygame.Surface((15, 5))
+            self.surf.fill('green')
+            self.image = self.surf
+            self.rect = self.image.get_rect()
+            self.rect.x = gg_pos_x - 3
+            self.rect.y = gg_pos_y
+
+        def update(self, *args, **kwargs):
+            nonlocal game_exit
+            self.rect.y += 10
+            if pygame.sprite.spritecollideany(self, gg_sprite_group):
+                count2[1] = str(int(count2[1]) + count)
+                with open('data/database/RaitingDb.txt', 'w', encoding='utf-8') as f:
+                    f.write(','.join(count2))
+                status = game_over_main()
+                if status == 1:
+                    game_exit = 1
+                elif status == 2:
+                    game_exit = 2
+                elif status == 0:
+                    game_exit = 0
+
     class Enamy(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y):
             pygame.sprite.Sprite.__init__(self)
@@ -135,6 +160,9 @@ def space_invaiders_main():
                 self.count_sprites = 0
             self.image = self.sprites_img[int(self.count_sprites)]
             if pygame.sprite.spritecollideany(self, floor_sprite_group):
+                count2[1] = str(int(count2[1]) + count)
+                with open('data/database/RaitingDb.txt', 'w', encoding='utf-8') as f:
+                    f.write(','.join(count2))
                 status = game_over_main()
                 if status == 1:
                     game_exit = 1
@@ -209,12 +237,17 @@ def space_invaiders_main():
                     gg_sprite_group.update('right1')
                 if event.key == pygame.K_SPACE:
                     bullet_sprite_group.add(Bullet(gg_sprite_group.sprites()[0].rect.centerx))
+                    blust_sound.play()
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     gg_sprite_group.update('left0')
                 if event.key == pygame.K_RIGHT:
                     gg_sprite_group.update('right0')
+
+            if event.type == MYEVENTTYPE:
+                bullet_enamy_sprite_group.add(BulletEnamy(choice(enamy_sprite_group.sprites()).rect.centerx,
+                                                          choice(enamy_sprite_group.sprites()).rect.centery))
 
         screen.fill((0, 0, 0))
         screen.blit(space_invaiders_fon, (0, 0))
@@ -230,6 +263,9 @@ def space_invaiders_main():
 
         bullet_sprite_group.draw(screen)
         bullet_sprite_group.update()
+
+        bullet_enamy_sprite_group.draw(screen)
+        bullet_enamy_sprite_group.update()
 
         screen.blit(game_font.render(f'Уничтожено {count}', 1, 'green'), (10, 0))
         screen.blit(game_font.render(f'уничтожено за все время {count2[1]}', 1, 'green'), (10, 40))
