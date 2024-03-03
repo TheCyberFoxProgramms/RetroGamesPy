@@ -82,8 +82,14 @@ if __name__ == '__main__':
                 if event.button == 1 and (100 < event.pos[0] < 275) and (557 < event.pos[1] < 595):
                     click2.play()
                     status = space_drive_main()
-                    if not status:
-                        running = False
+                    while True:
+                        if status == 1:
+                            break
+                        if not status:
+                            running = False
+                            break
+                        if status == 666:
+                            status = space_drive_main()
                     run_menu_musik()
 
                 if event.button == 1 and (100 < event.pos[0] < 280) and (650 < event.pos[1] < 700):

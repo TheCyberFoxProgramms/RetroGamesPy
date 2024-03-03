@@ -1,5 +1,6 @@
 import pygame
-from random import randint
+from random import randint, choice
+from GameOver import game_over_main
 
 def space_drive_main():
     pygame.init()
@@ -11,6 +12,13 @@ def space_drive_main():
     image_fon_pos1 = [0, 0]
     GG_CAR_X, GG_CAR_Y = 390, 550
     score = 0
+    max_score = None
+    game_exit = None
+    with open('data/database/RaitingDb.txt', encoding='utf-8') as f:
+        max_score = f.read().rstrip().split(',')[2]
+    score_boost = False
+    enamy_x_coord = (270, 390, 510)
+    enamy_y_coord = (-15, -415, -815)
     running = True
 
     gg_group = pygame.sprite.Group()
@@ -77,12 +85,63 @@ def space_drive_main():
             if self.rect.y > Height:
                 self.rect.y = randint(-1000, -310)
 
-
-
     for _ in range(30):
         effects_group.add(Effects(randint(0, 250), randint(-1000, -310), randint(100, 300)))
     for _ in range(30):
         effects_group.add(Effects(randint(610, Width), randint(-1000, -310), randint(100, 300)))
+
+    class Enamy(pygame.sprite.Sprite):
+        def __init__(self, pos_x, pos_y):
+            pygame.sprite.Sprite.__init__(self)
+            self.boost_spead = False
+            self.image = pygame.image.load(r'data/image/space_driver/deiver1.png')
+            self.rect = self.image.get_rect()
+            self.pos_y = pos_y
+            self.rect.x = pos_x
+            self.rect.y = pos_y
+
+
+        def update(self, *args, **kwargs):
+            nonlocal game_exit
+            if self.rect.y > Height - (+self.pos_y):
+                self.rect.y = self.pos_y
+                self.rect.x = choice(enamy_x_coord)
+            if args and not args[0]:
+                self.boost_spead = False
+            elif args and args[0]:
+                self.boost_spead = True
+            if not self.boost_spead:
+                self.rect.y += 2
+            else:
+                self.rect.y += 15
+            if pygame.sprite.spritecollideany(self, gg_group):
+                old_data = ''
+                with open('data/database/RaitingDb.txt', encoding='UTF-8') as f:
+                    old_data = f.read().rstrip().split(',')
+                if int(old_data[2]) < score:
+                    old_data[2] = str(score)
+                    with open('data/database/RaitingDb.txt', 'w', encoding='utf-8') as f:
+                        f.write(','.join(old_data))
+                status = game_over_main()
+                if status == 1:
+                    game_exit = 1
+                elif status == 2:
+                    game_exit = 2
+                elif status == 0:
+                    game_exit = 0
+
+
+
+
+
+    enamy_add_y = list()
+    while len(enamy_add_y) != 3:
+        per = choice(enamy_y_coord)
+        if per not in enamy_add_y:
+            enamy_add_y.append(per)
+    for i in enamy_add_y:
+        enamy_group.add(Enamy(choice(enamy_x_coord), i))
+
 
     def run_menu_musik():
         pygame.mixer.music.load('data/sounds/space_driver/space_driver.mp3')
@@ -125,20 +184,35 @@ def space_drive_main():
                     gg_group.update('left')
                 if event.key == pygame.K_UP:
                     effects_group.update(True)
+                    enamy_group.update(True)
+                    score_boost = True
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP:
                     effects_group.update(False)
+                    enamy_group.update(False)
+                    score_boost = False
 
         screen.fill((0, 0, 0))
         render_image_fons(screen)
         screen.blit(game_font.render(f'Пролетел: {score} св/л', 1, 'green'), (10, 0))
-        screen.blit(game_font.render(f'Предыдущий рекорд: 0 св/л', 1, 'green'), (10, 40))
-        score += 1
+        screen.blit(game_font.render(f'Максимальный рекорд: {max_score} св/л', 1, 'green'), (10, 40))
+        if not score_boost:
+            score += 1
+        else:
+            score += 10
         gg_group.draw(screen)
         gg_group.update()
         effects_group.draw(screen)
         effects_group.update()
+        enamy_group.draw(screen)
+        enamy_group.update()
+        if game_exit == 1:
+            return 1
+        elif game_exit == 0:
+            running = False
+        elif game_exit == 2:
+            return 666
         pygame.display.flip()
         clock.tick(FPS)
     return 0

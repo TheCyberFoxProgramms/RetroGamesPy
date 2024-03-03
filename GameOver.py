@@ -39,9 +39,11 @@ def game_over_main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and (329 < event.pos[0] < 565) and (508 < event.pos[1] < 551):
                     click2.play()
+                    return 2
 
                 if event.button == 1 and (237 < event.pos[0] < 664) and (609 < event.pos[1] < 654):
                     click2.play()
+                    return 1
 
             if event.type == pygame.MOUSEMOTION:
                 if (329 < event.pos[0] < 565) and (508 < event.pos[1] < 551):
@@ -72,7 +74,7 @@ def game_over_main():
         render_text(screen)
         pygame.display.flip()
         clock.tick(FPS)
-    pygame.quit()
+    return 0
 
 if __name__ == '__main__':
     game_over_main()
