@@ -12,7 +12,9 @@ def space_invaiders_main():
     check_position = False
     all_enamy = 23
     count = 0
-    count2 = 0
+    count2 = None
+    with open('data/database/RaitingDb.txt', encoding='utf-8') as f:
+        count2 = f.read().rstrip().split(',')
     game_exit = None
     running = True
     space_invaiders_fon = pygame.image.load('data/image/space_invaiders/space_invaiders_fon.png')
@@ -32,6 +34,10 @@ def space_invaiders_main():
 
     blust_sound = pygame.mixer.Sound('data/sounds/space_invaiders/blaster.ogg')
     blust_sound.set_volume(0.6)
+
+    size_font = 24
+    game_font = pygame.font.Font(r'data/Minecraft Seven_2.ttf', size_font)
+
 
     def read_db():
         with open('data/database/RaitingDb.txt', encoding='utf-8') as file:
@@ -141,13 +147,17 @@ def space_invaiders_main():
                     self.kill()
                     i.kill()
                     count += 1
-                    count2 += 1
             if count == all_enamy:
-                count = 0
-                return
-
-
-
+                count2[1] = str(int(count2[1]) + count)
+                with open('data/database/RaitingDb.txt', 'w', encoding='utf-8') as f:
+                    f.write(','.join(count2))
+                status = game_win_main()
+                if status == 1:
+                    game_exit = 1
+                elif status == 2:
+                    game_exit = 2
+                elif status == 0:
+                    game_exit = 0
 
 
 
@@ -157,18 +167,17 @@ def space_invaiders_main():
     floor_sprite_group.add(Floor(640))
 
 
-
     size = 100
     for i in range(8):
-        enamy_sprite_group.add(Enamy(size, 0))
+        enamy_sprite_group.add(Enamy(size, 100))
         size += 100
     size = 150
     for i in range(7):
-        enamy_sprite_group.add(Enamy(size, 100))
+        enamy_sprite_group.add(Enamy(size, 200))
         size += 100
     size = 100
     for i in range(8):
-        enamy_sprite_group.add(Enamy(size, 200))
+        enamy_sprite_group.add(Enamy(size, 300))
         size += 100
 
     def move_y():
@@ -221,6 +230,10 @@ def space_invaiders_main():
 
         bullet_sprite_group.draw(screen)
         bullet_sprite_group.update()
+
+        screen.blit(game_font.render(f'Уничтожено {count}', 1, 'green'), (10, 0))
+        screen.blit(game_font.render(f'уничтожено за все время {count2[1]}', 1, 'green'), (10, 40))
+
 
         if game_exit == 1:
             return 1
