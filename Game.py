@@ -75,8 +75,14 @@ if __name__ == '__main__':
                 if event.button == 1 and (100 < event.pos[0] < 335) and (505 < event.pos[1] < 545):
                     click2.play()
                     status = space_invaiders_main()
-                    if not status:
-                        running = False
+                    while True:
+                        if status == 1:
+                            break
+                        if not status:
+                            running = False
+                            break
+                        if status == 666:
+                            status = space_invaiders_main()
                     run_menu_musik()
 
                 if event.button == 1 and (100 < event.pos[0] < 275) and (557 < event.pos[1] < 595):
