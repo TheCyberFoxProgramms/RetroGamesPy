@@ -1,6 +1,7 @@
 import pygame
 from random import randint
 from GameOver import game_over_main
+from GameWin import game_win_main
 
 def puckman_main():
     pygame.init()
@@ -14,6 +15,7 @@ def puckman_main():
     size_font = 15
     game_font = pygame.font.Font(r'data/Minecraft Seven_2.ttf', size_font)
     lvl = 1
+    new_lvl = True
     game_map = None
     count_item = 0
     count_item_check = 0
@@ -21,6 +23,7 @@ def puckman_main():
     pygame.mixer.music.load('data/sounds/pucman/pucman_main.mp3')
     pygame.mixer.music.play(-1)
     pygame.mixer.music.set_volume(0.2)
+
     tails_sprites = pygame.sprite.Group()
     enamy_sprites = pygame.sprite.Group()
     item_sprites = pygame.sprite.Group()
@@ -28,8 +31,10 @@ def puckman_main():
 
 
 
-    with open('data/maps/map3.txt') as f:
-        game_map = f.read().split('\n')
+    def load_map(map):
+        nonlocal game_map
+        with open(f'data/maps/{map}') as f:
+            game_map = f.read().split('\n')
 
     tile_images = {0: r'data/image/pucman/tail0.png',
                    1: 'data/image/pucman/tail1.png'}
@@ -44,27 +49,29 @@ def puckman_main():
             self.rect.y = pos_y
 
     logic_mass = list()
-    tails_pos_y = 0
 
-    for index, value in enumerate(game_map):
-        tails_pos_x = 0
-        logic_mass_promt = list()
-        for i, v in enumerate(value):
-            if v == '.':
-                tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
-                logic_mass_promt.append(0)
-            elif v == '#':
-                tails_sprites.add(Taile(1, tails_pos_x, tails_pos_y))
-                logic_mass_promt.append(1)
-            elif v == '@':
-                tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
-                logic_mass_promt.append(2)
-            elif v == '+':
-                tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
-                logic_mass_promt.append(3)
-            tails_pos_x += 50
-        logic_mass.append(logic_mass_promt)
-        tails_pos_y += 50
+
+    def constract_map():
+        tails_pos_y = 0
+        for index, value in enumerate(game_map):
+            tails_pos_x = 0
+            logic_mass_promt = list()
+            for i, v in enumerate(value):
+                if v == '.':
+                    tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
+                    logic_mass_promt.append(0)
+                elif v == '#':
+                    tails_sprites.add(Taile(1, tails_pos_x, tails_pos_y))
+                    logic_mass_promt.append(1)
+                elif v == '@':
+                    tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
+                    logic_mass_promt.append(2)
+                elif v == '+':
+                    tails_sprites.add(Taile(0, tails_pos_x, tails_pos_y))
+                    logic_mass_promt.append(3)
+                tails_pos_x += 50
+            logic_mass.append(logic_mass_promt)
+            tails_pos_y += 50
 
 
 
@@ -127,7 +134,7 @@ def puckman_main():
             elif args and args[0] == 4:
                 self.rect.y += 50
 
-    gg_sprites.add(Gg(*start_pos_gg()))
+
 
     class Enamy(pygame.sprite.Sprite):
         def __init__(self, pos_x, pos_y, pos_courd):
@@ -202,16 +209,15 @@ def puckman_main():
                 self.kill()
 
 
-
-    for index, value in enumerate(logic_mass):
-        for i, v in enumerate(value):
-            if v == 3:
-                enamy_sprites.add(Enamy(i * 50, index * 50, (index, i)))
-            elif v == 0:
-                item_sprites.add(Item(i * 50, index * 50))
-                count_item += 1
-
-
+    def add_sprite():
+        nonlocal count_item
+        for index, value in enumerate(logic_mass):
+            for i, v in enumerate(value):
+                if v == 3:
+                    enamy_sprites.add(Enamy(i * 50, index * 50, (index, i)))
+                elif v == 0:
+                    item_sprites.add(Item(i * 50, index * 50))
+                    count_item += 1
 
 
 
@@ -249,8 +255,51 @@ def puckman_main():
             else:
                 return False
 
+    load_map('map1.txt')
+    constract_map()
+    add_sprite()
+    gg_sprites.add(Gg(*start_pos_gg()))
 
     while running:
+        if count_item_check >= count_item:
+            old_base = None
+            with open('data/database/RaitingDb.txt', encoding='utf-8') as f:
+                old_base = f.read().rstrip().split(',')
+                old_base[0] = str(int(old_base[0]) + count_item_check)
+                old_base = ','.join(old_base)
+            with open('data/database/RaitingDb.txt', 'w', encoding='utf-8') as f:
+                f.write(old_base)
+            lvl += 1
+            count_item_check = 0
+            count_item = 0
+            logic_mass = list()
+            for i in enamy_sprites:
+                i.kill()
+            for i in tails_sprites:
+                i.kill()
+            for i in gg_sprites:
+                i.kill()
+            if lvl == 2:
+                load_map('map2.txt')
+                constract_map()
+                add_sprite()
+                gg_sprites.add(Gg(*start_pos_gg()))
+            elif lvl == 3:
+                load_map('map3.txt')
+                constract_map()
+                add_sprite()
+                gg_sprites.add(Gg(*start_pos_gg()))
+            elif lvl == 4:
+                status = game_win_main()
+                if status == 1:
+                    game_exit = 1
+                elif status == 2:
+                    game_exit = 2
+                elif status == 0:
+                    game_exit = 0
+
+
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -287,11 +336,8 @@ def puckman_main():
         screen.blit(game_font.render(f'Собрано предметов: {count_item_check} из: {count_item} Уровень: {lvl}', 1, 'green'), (50, 45))
         pygame.display.flip()
         clock.tick(FPS)
-        if count_item_check >= count_item:
-            lvl += 1
-            print(666)
-            count_item_check = 0
-            count_item = 0
+
+
         if game_exit == 1:
             return 1
         elif game_exit == 0:
